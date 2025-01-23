@@ -14,6 +14,7 @@ Este projeto é uma API para gerenciar informações de clientes, construída co
 ## Estrutura do Projeto
 
 - `index.ts`: Arquivo principal que define o modelo do cliente e contém os manipuladores das funções Lambda.
+- `index.spec.ts`: Arquivo com cobertura de testes.
 
 ## Funcionalidades
 
