@@ -1,0 +1,224 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  # DynamoDB Table
+  ClientsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: 'Clients'
+      AttributeDefinitions:
+        - AttributeName: 'id'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'id'
+          KeyType: 'HASH'
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  # IAM Role for Lambda Function
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'LambdaDynamoDBPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:UpdateItem'
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:Scan'
+                Resource: '*'
+
+  # Lambda Function to Create Client
+  CreateClientFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: 'index.createClient'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      FunctionName: 'CreateClientFunction'
+      Code:
+        S3Bucket: 'your-s3-bucket'
+        S3Key: 'your-s3-key.zip'
+      Runtime: 'nodejs20.x'
+      MemorySize: 128
+      Timeout: 60
+
+  # Lambda Function to Get Client
+  GetClientFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: 'index.getClient'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      FunctionName: 'GetClientFunction'
+      Code:
+        S3Bucket: 'your-s3-bucket'
+        S3Key: 'your-s3-key.zip'
+      Runtime: 'nodejs20.x'
+      MemorySize: 128
+      Timeout: 60
+
+  # Lambda Function to Update Client
+  UpdateClientFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: 'index.updateClient'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      FunctionName: 'UpdateClientFunction'
+      Code:
+        S3Bucket: 'your-s3-bucket'
+        S3Key: 'your-s3-key.zip'
+      Runtime: 'nodejs20.x'
+      MemorySize: 128
+      Timeout: 60
+
+  # Lambda Function to Delete Client
+  DeleteClientFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: 'index.deleteClient'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      FunctionName: 'DeleteClientFunction'
+      Code:
+        S3Bucket: 'your-s3-bucket'
+        S3Key: 'your-s3-key.zip'
+      Runtime: 'nodejs20.x'
+      MemorySize: 128
+      Timeout: 60
+
+  # Lambda Function to List Clients
+  ListClientsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: 'index.listClients'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      FunctionName: 'ListClientsFunction'
+      Code:
+        S3Bucket: 'your-s3-bucket'
+        S3Key: 'your-s3-key.zip'
+      Runtime: 'nodejs20.x'
+      MemorySize: 128
+      Timeout: 60
+
+  # API Gateway to trigger Lambda Functions
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: 'ClientApi'
+      Description: 'API for managing clients'
+      FailOnWarnings: 'true'
+
+  # Resource for '/clients' path
+  ClientsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: 'clients'
+
+  # Create Client Method
+  CreateClientMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !Ref ClientsResource
+      RestApiId: !Ref ApiGateway
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateClientFunction.Arn}/invocations
+
+  # Get Client Method
+  GetClientMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      ResourceId: !Ref ClientsResource
+      RestApiId: !Ref ApiGateway
+      Integration:
+        IntegrationHttpMethod: GET
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetClientFunction.Arn}/invocations
+
+  # Update Client Method
+  UpdateClientMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: PUT
+      ResourceId: !Ref ClientsResource
+      RestApiId: !Ref ApiGateway
+      Integration:
+        IntegrationHttpMethod: PUT
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateClientFunction.Arn}/invocations
+
+  # Delete Client Method
+  DeleteClientMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: DELETE
+      ResourceId: !Ref ClientsResource
+      RestApiId: !Ref ApiGateway
+      Integration:
+        IntegrationHttpMethod: DELETE
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteClientFunction.Arn}/invocations
+
+  # List Clients Method
+  ListClientsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      ResourceId: !Ref ClientsResource
+      RestApiId: !Ref ApiGateway
+      Integration:
+        IntegrationHttpMethod: GET
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListClientsFunction.Arn}/invocations
+
+  # Lambda Permissions for API Gateway
+  LambdaApiGatewayInvokePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: 'LambdaInvokePolicy'
+      Roles:
+        - !Ref LambdaExecutionRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action: 'lambda:InvokeFunction'
+            Resource: 
+              - !GetAtt CreateClientFunction.Arn
+              - !GetAtt GetClientFunction.Arn
+              - !GetAtt UpdateClientFunction.Arn
+              - !GetAtt DeleteClientFunction.Arn
+              - !GetAtt ListClientsFunction.Arn
+
+  # API Gateway Deployment
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref ApiGateway
+      StageName: 'prod'
+    DependsOn:
+      - CreateClientMethod
+      - GetClientMethod
+      - UpdateClientMethod
+      - DeleteClientMethod
+      - ListClientsMethod
